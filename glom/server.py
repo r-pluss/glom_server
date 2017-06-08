@@ -9,6 +9,7 @@ import shutil
 import threading
 import uuid
 import bottle
+import magic
 import pymongo
 import requests
 import simplejson as json
@@ -90,6 +91,7 @@ class GlomServer():
     def download_media(self, data):
         file_location = self.begin_download(data)
         filehash = self.get_file_fingerprint(file_location)
+        mime_type = magic.from_file(file_location, mime= True)
         same_file = self.db.media.find_one({'fingerprint': filehash})
         if same_file:
             #change the record to point to the existing file and delete new one
@@ -98,6 +100,7 @@ class GlomServer():
                 {'$set':{
                     'filename': same_file['filename'],
                     'fingerprint': filehash,
+                    'mime_type': mime_type,
                     'processed': True
                 }}
             )
@@ -106,7 +109,12 @@ class GlomServer():
             #update the existing record with the data
             self.db.media.update_one(
                 {'filename': data['filename']},
-                {'$set': {'fingerprint': filehash, 'processed': True}}
+                {'$set': {
+                    'fingerprint': filehash,
+                    'mime_type': mime_type,
+                    'processed': True
+                    }
+                }
             )
 
     def get_file_fingerprint(self, file_path):
@@ -132,7 +140,7 @@ class GlomServer():
             cookie = bottle.request.get_cookie('glom_credentials')
             if cookie:
                 if cookie == self.nonce:
-                    return bottle.static_file('user_home.html', 
+                    return bottle.static_file('user_home.html',
                         root= os.path.join(
                             os.path.join(os.path.dirname(__file__), 'assets'),
                             'html'
@@ -156,24 +164,33 @@ class GlomServer():
                 tags = []
             return {'tags': tags}
 
-        @self.app.get('/user_media/<user_id>')
+        @self.app.get('/user_media/<user>')
         @json_head
         def get_user_media_list(user):
-            media = self.db.media.find(
+            media = [item for item in self.db.media.find(
                 {'username': user, 'processed': True},
                 {
-                    '_id': 0
+                    '_id': 0,
                     'filename': 1,
                     'height': 1,
                     'media_type': 1,
+                    'mime_type': 1,
+                    'tags': 1,
                     'title': 1,
                     'width': 1
                 }
-            )
+            )]
+            return {'media_list': media}
 
         @self.app.get('/media/<file_id>')
         def get_item(file_id):
-            return bottle.static_file(file_id, root= self.opt.storage_path)
+            mime_type= self.db.media.find_one(
+                {'filename': file_id}
+            )['mime_type']
+            return bottle.static_file(file_id,
+                root= self.opt.storage_path,
+                mimetype= mime_type
+            )
 
         @self.app.get('/assets/<filepath:path>')
         def get_static_asset(filepath):
@@ -197,6 +214,7 @@ class GlomServer():
                 'fingerprint': None,
                 'height': data['height'],
                 'media_type': data['media_type'],
+                'mime_type': None,
                 'processed': False,
                 'src': data['src'],
                 'tags': data['tags'],

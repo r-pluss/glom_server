@@ -1,8 +1,8 @@
 {
     "host": "0.0.0.0",
     "port": 443,
-    "ssl_cert": "/home/node_test/zerossl_test.cert",
-    "ssl_key": "/home/node_test/zerossl_test.pk",
+    "ssl_cert": "/home/bottle_ssl_test/auth/zerossl_glom.cert",
+    "ssl_key": "/home/bottle_ssl_test/auth/zerossl_glom.pk",
     "mongo_uri": "mongodb://localhost:27017/glom",
     "storage_path": "/home/glom_media"
 }
