@@ -135,21 +135,21 @@ class GlomServer():
     def create_app(self):
         self.app = bottle.Bottle()
 
-        @self.app.get('/')
-        def user_home():
-            cookie = bottle.request.get_cookie('glom_credentials')
-            if cookie:
-                if cookie == self.nonce:
-                    return bottle.static_file('user_home.html',
-                        root= os.path.join(
-                            os.path.join(os.path.dirname(__file__), 'assets'),
-                            'html'
-                        )
-                    )
-                else:
-                    bottle.abort(401, 'Token not recognized.')
-            else:
-                bottle.abort(401, 'Token not provided.')
+        #@self.app.get('/')
+        #def user_home():
+        #    cookie = bottle.request.get_cookie('glom_credentials')
+        #    if cookie:
+        #        if cookie == self.nonce:
+        #            return bottle.static_file('user_home.html',
+        #                root= os.path.join(
+        #                    os.path.join(os.path.dirname(__file__), 'assets'),
+        #                    'html'
+        #                )
+        #            )
+        #        else:
+        #            bottle.abort(401, 'Token not recognized.')
+        #    else:
+        #        bottle.abort(401, 'Token not provided.')
 
         @self.app.get('/handshake')
         @json_head
