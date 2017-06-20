@@ -92,6 +92,10 @@ class GlomServer():
         file_location = self.begin_download(data)
         filehash = self.get_file_fingerprint(file_location)
         mime_type = magic.from_file(file_location, mime= True)
+        #addresses some problems with libmagic, but there's probably
+        #a better way to address this long term
+        if mime_type == 'text/html':
+            mime_type = 'image/svg+xml'
         same_file = self.db.media.find_one({'fingerprint': filehash})
         if same_file:
             #change the record to point to the existing file and delete new one
