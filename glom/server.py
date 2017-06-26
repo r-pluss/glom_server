@@ -229,6 +229,51 @@ class GlomServer():
             self.db.media.insert_one(doc)
             self.glom_media(doc)
 
+        @self.app.post('/add_tag')
+        def add_tag():
+            data = bottle.request.json
+            if data is None:
+                bottle.abort(415, 'Content-Type must be application/json')
+            try:
+                media = data['media_id']
+                new_tag = data['tag']
+            except KeyError as e:
+                bottle.abort(400, "Expected key '{0}' not found.".format(
+                    e.args[0]
+                ))
+            self.db.media.update_one(
+                {
+                    'filename': media
+                },
+                {
+                    '$push': {
+                        'tags': new_tag
+                    }
+                }
+            )
+
+        @self.app.post('/remove_tag')
+        def remove_tag():
+            data = bottle.request.json
+            if data is None:
+                bottle.abort(415, 'Content-Type must be application/json')
+            try:
+                media = data['media_id']
+                dead_tag = data['tag']
+            except KeyError as e:
+                bottle.abort(400, "Expected key '{0}' not found.".format(
+                    e.args[0]
+                ))
+            self.db.media.update_one(
+                {
+                    'filename': media
+                },
+                {
+                    '$pull': {
+                        'tags': dead_tag
+                    }
+                }
+            )
 
 
 class GeBottle_Server(bottle.ServerAdapter):
